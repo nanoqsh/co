@@ -1,0 +1,12 @@
+[package]
+name = "co"
+version = "0.1.0-alpha"
+edition = "2021"
+description = "Efficient byte packet encoding/decoding"
+documentation = "https://docs.rs/areq"
+license = "Apache-2.0 OR MIT"
+authors = ["nanoqsh"]
+keywords = ["encoding", "decoding", "no-std"]
+categories = ["encoding", "no-std", "no-std::no-alloc"]
+repository = "https://github.com/nanoqsh/co"
+rust-version = "1.83"
