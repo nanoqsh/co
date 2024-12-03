@@ -1,6 +1,6 @@
 [package]
 name = "co"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha2"
 edition = "2021"
 description = "Efficient byte packet encoding/decoding"
 documentation = "https://docs.rs/areq"
