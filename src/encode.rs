@@ -44,6 +44,7 @@ pub unsafe trait Encode {
     unsafe fn encode_unchecked(&self, buf: &mut [MaybeUninit<u8>]);
 }
 
+// SAFETY: delegate to inner impl
 unsafe impl<E> Encode for &E
 where
     E: Encode + ?Sized,
@@ -58,6 +59,7 @@ where
     }
 }
 
+// SAFETY: encode empty buffer with zero size
 unsafe impl Encode for () {
     fn size(&self) -> Size {
         Size(0)
@@ -68,6 +70,7 @@ unsafe impl Encode for () {
     }
 }
 
+// SAFETY: copy a slice into the buffer
 unsafe impl Encode for [u8] {
     fn size(&self) -> Size {
         Size(self.len())
@@ -77,10 +80,15 @@ unsafe impl Encode for [u8] {
         debug_assert_eq!(self.size(), buf.len(), "trait invariant violation");
 
         let bufptr: *mut u8 = buf.as_mut_ptr().cast();
+
+        // SAFETY:
+        // * copy all bytes from the slice
+        // * slice and `buf` are nonoverlapping since `buf` passed by `&mut [_]`
         unsafe { bufptr.copy_from_nonoverlapping(self.as_ptr(), self.len()) }
     }
 }
 
+// SAFETY: delegate to slice impl
 unsafe impl<const N: usize> Encode for [u8; N] {
     fn size(&self) -> Size {
         self[..].size()
@@ -92,9 +100,10 @@ unsafe impl<const N: usize> Encode for [u8; N] {
     }
 }
 
+// SAFETY: encode a byte, `size` is 1
 unsafe impl Encode for u8 {
     fn size(&self) -> Size {
-        Size(size_of::<u8>())
+        Size(size_of::<Self>())
     }
 
     unsafe fn encode_unchecked(&self, buf: &mut [MaybeUninit<u8>]) {
@@ -107,6 +116,9 @@ unsafe impl Encode for u8 {
 
 struct Then<A, B>(A, B);
 
+// SAFETY:
+// * split `buf` into two parts at `a.size()`
+// * delegate impls to parts
 unsafe impl<A, B> Encode for Then<A, B>
 where
     A: Encode,
@@ -124,10 +136,14 @@ where
         let Self(a, b) = self;
 
         let Size(a_size) = a.size();
+
+        // SAFETY: `buf` length == `a.size() + b.size()`, so it can be splitted at `a.size()`
         let (head, tail) = unsafe { buf.split_at_mut_unchecked(a_size) };
 
+        // SAFETY: head length == `a.size()`
         unsafe { a.encode_unchecked(head) }
 
+        // SAFETY: tail length == `b.size()`
         unsafe { b.encode_unchecked(tail) }
     }
 }
@@ -204,28 +220,39 @@ impl Bytes<{ size_of::<usize>() }> for Le<usize> {
 
 struct Plain<B, const N: usize>(B);
 
+// SAFETY:
+// * initialze `N` bytes, so `size` returns exatly `N`
+// * copy bytes from `Bytes` trait impls, even when `Bytes`
+//   is a safe trait, it returns fully initialized bytes,
+//   since the array type guarantees initialization.
+//   (actually `Bytes` can also be public since custom impl
+//   doesn't break the safety)
 unsafe impl<B, const N: usize> Encode for Plain<B, N>
 where
     B: Bytes<N>,
 {
     fn size(&self) -> Size {
-        const { assert!(size_of::<B>() == N) }
-
-        Size(size_of::<B>())
+        Size(N)
     }
 
     unsafe fn encode_unchecked(&self, buf: &mut [MaybeUninit<u8>]) {
+        // SAFETY: the caller must ensure `s.len() == N`
         unsafe fn as_array_mut<T, const N: usize>(s: &mut [T]) -> &mut [T; N] {
-            debug_assert!(s.len() == N, "lengths don't match");
+            debug_assert_eq!(s.len(), N, "lengths don't match");
 
             let sptr: *mut [T; N] = s.as_mut_ptr().cast();
 
+            // SAFETY:
+            // * cast the slice with `N` length
+            //   to an array with `N` length
             unsafe { &mut *sptr }
         }
 
         debug_assert_eq!(self.size(), buf.len(), "trait invariant violation");
 
+        // SAFETY: `s.len() == N` by outer caller invariant
         let array = unsafe { as_array_mut(buf) };
+
         *array = self.0.bytes().map(MaybeUninit::new);
     }
 }
@@ -505,8 +532,12 @@ pub trait EncodeExt: Encode + Sized {
         let buf = buf.buffer();
         let Size(size) = self.size();
         if size == buf.len() {
+            // SAFETY: `buf` length is checked above
             unsafe { self.encode_unchecked(buf) }
 
+            // SAFETY:
+            // * by `Encode` trait invariant all bytes of `buf` was initialized,
+            //   so cast `&mut [MaybeUninit<u8>]` to `&mut [u8]`
             let init = unsafe { slice::from_raw_parts_mut(buf.as_mut_ptr().cast(), buf.len()) };
 
             Ok(init)
@@ -538,9 +569,12 @@ impl<const N: usize> Buffer for [MaybeUninit<u8>; N] {
 
 impl Buffer for [u8] {
     fn buffer(&mut self) -> &mut [MaybeUninit<u8>] {
-        // this operation is basically safe
+        // This operation is basically safe
         fn slice_mut_as_init(s: &mut [u8]) -> &mut [MaybeUninit<u8>] {
-            // SAFETY: rebuild slice erasing information about initialization
+            // SAFETY:
+            // * rebuild the slice by erasing information about initialization,
+            //   here the `[MaybeUninit<u8>]` is fully initializated, but
+            //   it is ok for `MaybeUninit<u8>` to be initializated
             unsafe { slice::from_raw_parts_mut(s.as_mut_ptr().cast(), s.len()) }
         }
 
