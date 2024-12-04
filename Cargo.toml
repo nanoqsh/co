@@ -15,7 +15,7 @@ rust-version = "1.83"
 [lints.clippy]
 manual-assert = "deny"
 missing-assert-message = "deny"
-missing_inline_in_public_items = "deny"
+missing-inline-in-public-items = "deny"
 multiple-unsafe-ops-per-block = "deny"
 semicolon-if-nothing-returned = "deny"
 trivially-copy-pass-by-ref = "deny"

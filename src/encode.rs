@@ -4,12 +4,14 @@ use core::{mem::MaybeUninit, slice};
 pub struct Size(pub usize);
 
 impl Size {
+    #[inline]
     pub fn expand(self, more: usize) -> Self {
         Self(usize::checked_add(self.0, more).expect("size cannot overflow"))
     }
 }
 
 impl PartialEq<usize> for Size {
+    #[inline]
     fn eq(&self, &rhs: &usize) -> bool {
         self.0 == rhs
     }
@@ -49,10 +51,12 @@ unsafe impl<E> Encode for &E
 where
     E: Encode + ?Sized,
 {
+    #[inline]
     fn size(&self) -> Size {
         (**self).size()
     }
 
+    #[inline]
     unsafe fn encode_unchecked(&self, buf: &mut [MaybeUninit<u8>]) {
         // SAFETY: delegate to inner impl
         unsafe { (**self).encode_unchecked(buf) }
@@ -61,10 +65,12 @@ where
 
 // SAFETY: encode empty buffer with zero size
 unsafe impl Encode for () {
+    #[inline]
     fn size(&self) -> Size {
         Size(0)
     }
 
+    #[inline]
     unsafe fn encode_unchecked(&self, buf: &mut [MaybeUninit<u8>]) {
         debug_assert!(buf.is_empty(), "trait invariant violation");
     }
@@ -72,10 +78,12 @@ unsafe impl Encode for () {
 
 // SAFETY: copy a slice into the buffer
 unsafe impl Encode for [u8] {
+    #[inline]
     fn size(&self) -> Size {
         Size(self.len())
     }
 
+    #[inline]
     unsafe fn encode_unchecked(&self, buf: &mut [MaybeUninit<u8>]) {
         debug_assert_eq!(self.size(), buf.len(), "trait invariant violation");
 
@@ -90,10 +98,12 @@ unsafe impl Encode for [u8] {
 
 // SAFETY: delegate to slice impl
 unsafe impl<const N: usize> Encode for [u8; N] {
+    #[inline]
     fn size(&self) -> Size {
         self[..].size()
     }
 
+    #[inline]
     unsafe fn encode_unchecked(&self, buf: &mut [MaybeUninit<u8>]) {
         // SAFETY: delegate to slice impl
         unsafe { self[..].encode_unchecked(buf) }
@@ -102,10 +112,12 @@ unsafe impl<const N: usize> Encode for [u8; N] {
 
 // SAFETY: encode a byte, `size` is 1
 unsafe impl Encode for u8 {
+    #[inline]
     fn size(&self) -> Size {
         Size(size_of::<Self>())
     }
 
+    #[inline]
     unsafe fn encode_unchecked(&self, buf: &mut [MaybeUninit<u8>]) {
         debug_assert_eq!(self.size(), buf.len(), "trait invariant violation");
 
@@ -124,12 +136,14 @@ where
     A: Encode,
     B: Encode,
 {
+    #[inline]
     fn size(&self) -> Size {
         let Self(a, b) = self;
         let Size(b_size) = b.size();
         a.size().expand(b_size)
     }
 
+    #[inline]
     unsafe fn encode_unchecked(&self, buf: &mut [MaybeUninit<u8>]) {
         debug_assert_eq!(self.size(), buf.len(), "trait invariant violation");
 
@@ -231,10 +245,12 @@ unsafe impl<B, const N: usize> Encode for Plain<B, N>
 where
     B: Bytes<N>,
 {
+    #[inline]
     fn size(&self) -> Size {
         Size(N)
     }
 
+    #[inline]
     unsafe fn encode_unchecked(&self, buf: &mut [MaybeUninit<u8>]) {
         // SAFETY: the caller must ensure `s.len() == N`
         unsafe fn as_array_mut<T, const N: usize>(s: &mut [T]) -> &mut [T; N] {
@@ -298,6 +314,7 @@ pub trait EncodeExt: Encode + Sized {
     ///
     /// assert_eq!(&code, b"uwu");
     /// ```
+    #[inline]
     fn then<E>(self, e: E) -> impl Encode
     where
         E: Encode,
@@ -317,6 +334,7 @@ pub trait EncodeExt: Encode + Sized {
     ///
     /// assert_eq!(code, [37]);
     /// ```
+    #[inline]
     fn u8(self, u: u8) -> impl Encode {
         Then(self, u)
     }
@@ -334,6 +352,7 @@ pub trait EncodeExt: Encode + Sized {
     ///
     /// assert_eq!(code, [0, 0xFF]);
     /// ```
+    #[inline]
     fn u16_be(self, u: u16) -> impl Encode {
         Then(self, Plain(Be(u)))
     }
@@ -351,6 +370,7 @@ pub trait EncodeExt: Encode + Sized {
     ///
     /// assert_eq!(code, [0xFF, 0]);
     /// ```
+    #[inline]
     fn u16_le(self, u: u16) -> impl Encode {
         Then(self, Plain(Le(u)))
     }
@@ -368,6 +388,7 @@ pub trait EncodeExt: Encode + Sized {
     ///
     /// assert_eq!(code, [0, 0, 0, 0xFF]);
     /// ```
+    #[inline]
     fn u32_be(self, u: u32) -> impl Encode {
         Then(self, Plain(Be(u)))
     }
@@ -385,6 +406,7 @@ pub trait EncodeExt: Encode + Sized {
     ///
     /// assert_eq!(code, [0xFF, 0, 0, 0]);
     /// ```
+    #[inline]
     fn u32_le(self, u: u32) -> impl Encode {
         Then(self, Plain(Le(u)))
     }
@@ -402,6 +424,7 @@ pub trait EncodeExt: Encode + Sized {
     ///
     /// assert_eq!(code, [0, 0, 0, 0, 0, 0, 0, 0xFF]);
     /// ```
+    #[inline]
     fn u64_be(self, u: u64) -> impl Encode {
         Then(self, Plain(Be(u)))
     }
@@ -419,6 +442,7 @@ pub trait EncodeExt: Encode + Sized {
     ///
     /// assert_eq!(code, [0xFF, 0, 0, 0, 0, 0, 0, 0]);
     /// ```
+    #[inline]
     fn u64_le(self, u: u64) -> impl Encode {
         Then(self, Plain(Le(u)))
     }
@@ -439,6 +463,7 @@ pub trait EncodeExt: Encode + Sized {
     ///     0, 0, 0, 0, 0, 0, 0, 0xFF,
     /// ]);
     /// ```
+    #[inline]
     fn u128_be(self, u: u128) -> impl Encode {
         Then(self, Plain(Be(u)))
     }
@@ -459,6 +484,7 @@ pub trait EncodeExt: Encode + Sized {
     ///     0, 0, 0, 0, 0, 0, 0, 0,
     /// ]);
     /// ```
+    #[inline]
     fn u128_le(self, u: u128) -> impl Encode {
         Then(self, Plain(Le(u)))
     }
@@ -476,6 +502,7 @@ pub trait EncodeExt: Encode + Sized {
     ///
     /// assert_eq!(code.last(), Some(&0xFF));
     /// ```
+    #[inline]
     fn usize_be(self, u: usize) -> impl Encode {
         Then(self, Plain(Be(u)))
     }
@@ -493,6 +520,7 @@ pub trait EncodeExt: Encode + Sized {
     ///
     /// assert_eq!(code.first(), Some(&0xFF));
     /// ```
+    #[inline]
     fn usize_le(self, u: usize) -> impl Encode {
         Then(self, Plain(Le(u)))
     }
@@ -525,6 +553,7 @@ pub trait EncodeExt: Encode + Sized {
     /// // Error: buffer length must be equal to 3
     /// assert_eq!(code, Err(3));
     /// ```
+    #[inline]
     fn encode<B>(self, buf: &mut B) -> Result<&mut [u8], usize>
     where
         B: Buffer + ?Sized,
@@ -556,18 +585,21 @@ pub trait Buffer {
 }
 
 impl Buffer for [MaybeUninit<u8>] {
+    #[inline]
     fn buffer(&mut self) -> &mut [MaybeUninit<u8>] {
         self
     }
 }
 
 impl<const N: usize> Buffer for [MaybeUninit<u8>; N] {
+    #[inline]
     fn buffer(&mut self) -> &mut [MaybeUninit<u8>] {
         self
     }
 }
 
 impl Buffer for [u8] {
+    #[inline]
     fn buffer(&mut self) -> &mut [MaybeUninit<u8>] {
         // This operation is basically safe
         fn slice_mut_as_init(s: &mut [u8]) -> &mut [MaybeUninit<u8>] {
@@ -583,6 +615,7 @@ impl Buffer for [u8] {
 }
 
 impl<const N: usize> Buffer for [u8; N] {
+    #[inline]
     fn buffer(&mut self) -> &mut [MaybeUninit<u8>] {
         self[..].buffer()
     }
