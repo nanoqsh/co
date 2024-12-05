@@ -121,8 +121,10 @@ unsafe impl Encode for u8 {
     unsafe fn encode_unchecked(&self, buf: &mut [MaybeUninit<u8>]) {
         debug_assert_eq!(self.size(), buf.len(), "trait invariant violation");
 
-        // SAFETY: delegate to array impl
-        unsafe { self.to_ne_bytes().encode_unchecked(buf) }
+        // SAFETY: `buf.len()` == 1
+        unsafe {
+            *buf.get_unchecked_mut(0) = MaybeUninit::new(*self);
+        }
     }
 }
 

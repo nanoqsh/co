@@ -12,6 +12,13 @@ readme = "README.md"
 repository = "https://github.com/nanoqsh/co"
 rust-version = "1.83"
 
+[dev-dependencies]
+divan = "0.1"
+
+[[bench]]
+name = "cmp"
+harness = false
+
 [lints.clippy]
 manual-assert = "deny"
 missing-assert-message = "deny"
