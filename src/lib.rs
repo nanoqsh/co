@@ -2,6 +2,7 @@
 #![doc = include_str!("../README.md")]
 
 mod encode;
+pub mod encode_safe;
 
 /// The crate's prelude.
 pub mod prelude {

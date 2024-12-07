@@ -29,3 +29,9 @@ trivially-copy-pass-by-ref = "deny"
 use-self = "deny"
 undocumented-unsafe-blocks = "deny"
 unwrap-used = "deny"
+
+[profile.release]
+codegen-units = 1
+lto = true
+panic = "abort"
+strip = true

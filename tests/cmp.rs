@@ -18,17 +18,17 @@ const CODE: [u8; 14] = [
 #[test]
 fn co_pack() {
     let mut out = [0; CODE.len()];
-    let ok = co_encode(&PACK, &mut out);
+    let res = co_encode(&PACK, &mut out);
 
-    assert!(ok);
+    assert!(res.is_ok());
     assert_eq!(out, CODE);
 }
 
 #[test]
 fn safe_pack() {
     let mut out = [0; CODE.len()];
-    let ok = safe_encode(&PACK, &mut out);
+    let res = safe_encode(&PACK, &mut out);
 
-    assert!(ok);
+    assert!(res.is_ok());
     assert_eq!(out, CODE);
 }
