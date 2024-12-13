@@ -17,11 +17,11 @@ const PACK: Pack = Pack {
 };
 
 #[divan::bench]
-fn co() {
+fn co_unsafe() {
     let mut out = [0; 14];
     let (p, out) = divan::black_box((PACK, &mut out));
 
-    let res = co_encode(&p, out);
+    let res = co_unsafe_encode(&p, out);
     assert!(res.is_ok());
 }
 
@@ -43,8 +43,8 @@ fn safe() {
     assert!(res.is_ok());
 }
 
-fn co_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
-    use co::EncodeExt;
+fn co_unsafe_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
+    use co::encode_unsafe::EncodeExt;
 
     p.code
         .then(p.key.as_bytes())
@@ -57,7 +57,7 @@ fn co_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
 }
 
 fn co_safe_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
-    use co::encode_safe::EncodeExt;
+    use co::EncodeExt;
 
     p.code
         .then(p.key.as_bytes())
