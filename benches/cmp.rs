@@ -9,50 +9,36 @@ struct Pack {
     slice: &'static [u8],
 }
 
+const PACK: Pack = Pack {
+    code: 0,
+    key: "hello",
+    val: 37,
+    slice: &[1, 2, 3],
+};
+
 #[divan::bench]
 fn co() {
-    let p = Pack {
-        code: 0,
-        key: "hello",
-        val: 37,
-        slice: &[1, 2, 3],
-    };
-
     let mut out = [0; 14];
+    let (p, out) = divan::black_box((PACK, &mut out));
 
-    let (p, out) = divan::black_box((p, &mut out));
     let res = co_encode(&p, out);
     assert!(res.is_ok());
 }
 
 #[divan::bench]
 fn co_safe() {
-    let p = Pack {
-        code: 0,
-        key: "hello",
-        val: 37,
-        slice: &[1, 2, 3],
-    };
-
     let mut out = [0; 14];
+    let (p, out) = divan::black_box((PACK, &mut out));
 
-    let (p, out) = divan::black_box((p, &mut out));
     let res = co_safe_encode(&p, out);
     assert!(res.is_ok());
 }
 
 #[divan::bench]
 fn safe() {
-    let p = Pack {
-        code: 0,
-        key: "hello",
-        val: 37,
-        slice: &[1, 2, 3],
-    };
-
     let mut out = [0; 14];
+    let (p, out) = divan::black_box((PACK, &mut out));
 
-    let (p, out) = divan::black_box((p, &mut out));
     let res = safe_encode(&p, out);
     assert!(res.is_ok());
 }
