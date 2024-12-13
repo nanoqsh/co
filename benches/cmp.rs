@@ -58,71 +58,36 @@ fn safe() {
 }
 
 fn co_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
-    use {
-        co::{Encode, EncodeExt},
-        core::{mem::MaybeUninit, slice},
-    };
-
-    let pack_len =
-          1           // code
-        + p.key.len() // key
-        + 1           // nul byte
-        + 4           // val
-        + 3           // slice
-    ;
-
-    if out.len() != pack_len {
-        return Err(pack_len);
-    }
-
-    let t = p
-        .code
-        .then(p.key.as_bytes())
-        .u8(0)
-        .u32_be(p.val)
-        .then(p.slice);
-
-    fn slice_mut_as_init(s: &mut [u8]) -> &mut [MaybeUninit<u8>] {
-        unsafe { slice::from_raw_parts_mut(s.as_mut_ptr().cast(), s.len()) }
-    }
-
-    unsafe { t.encode_unchecked(slice_mut_as_init(out)) };
-
-    Ok(())
-}
-
-fn co_safe_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
-    use co::encode_safe::{Encode, EncodeExt};
-
-    let pack_len =
-          1           // code
-        + p.key.len() // key
-        + 1           // nul byte
-        + 4           // val
-        + 3           // slice
-    ;
-
-    if out.len() != pack_len {
-        return Err(pack_len);
-    }
+    use co::EncodeExt;
 
     p.code
         .then(p.key.as_bytes())
         .u8(0)
         .u32_be(p.val)
         .then(p.slice)
-        .encode_checked(out);
+        .encode(out)?;
 
     Ok(())
 }
 
+fn co_safe_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
+    use co::encode_safe::EncodeExt;
+
+    p.code
+        .then(p.key.as_bytes())
+        .u8(0)
+        .u32_be(p.val)
+        .then(p.slice)
+        .encode(out)
+}
+
 fn safe_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
     let pack_len =
-          1           // code
-        + p.key.len() // key
-        + 1           // nul byte
-        + 4           // val
-        + 3           // slice
+          1             // code
+        + p.key.len()   // key
+        + 1             // nul byte
+        + 4             // val
+        + p.slice.len() // slice
     ;
 
     if out.len() != pack_len {

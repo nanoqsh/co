@@ -175,60 +175,70 @@ trait Bytes<const N: usize>: Copy {
 }
 
 impl Bytes<{ size_of::<u16>() }> for Be<u16> {
+    #[inline]
     fn bytes(self) -> [u8; size_of::<u16>()] {
         self.0.to_be_bytes()
     }
 }
 
 impl Bytes<{ size_of::<u16>() }> for Le<u16> {
+    #[inline]
     fn bytes(self) -> [u8; size_of::<u16>()] {
         self.0.to_le_bytes()
     }
 }
 
 impl Bytes<{ size_of::<u32>() }> for Be<u32> {
+    #[inline]
     fn bytes(self) -> [u8; size_of::<u32>()] {
         self.0.to_be_bytes()
     }
 }
 
 impl Bytes<{ size_of::<u32>() }> for Le<u32> {
+    #[inline]
     fn bytes(self) -> [u8; size_of::<u32>()] {
         self.0.to_le_bytes()
     }
 }
 
 impl Bytes<{ size_of::<u64>() }> for Be<u64> {
+    #[inline]
     fn bytes(self) -> [u8; size_of::<u64>()] {
         self.0.to_be_bytes()
     }
 }
 
 impl Bytes<{ size_of::<u64>() }> for Le<u64> {
+    #[inline]
     fn bytes(self) -> [u8; size_of::<u64>()] {
         self.0.to_le_bytes()
     }
 }
 
 impl Bytes<{ size_of::<u128>() }> for Be<u128> {
+    #[inline]
     fn bytes(self) -> [u8; size_of::<u128>()] {
         self.0.to_be_bytes()
     }
 }
 
 impl Bytes<{ size_of::<u128>() }> for Le<u128> {
+    #[inline]
     fn bytes(self) -> [u8; size_of::<u128>()] {
         self.0.to_le_bytes()
     }
 }
 
 impl Bytes<{ size_of::<usize>() }> for Be<usize> {
+    #[inline]
     fn bytes(self) -> [u8; size_of::<usize>()] {
         self.0.to_be_bytes()
     }
 }
 
 impl Bytes<{ size_of::<usize>() }> for Le<usize> {
+    #[inline]
     fn bytes(self) -> [u8; size_of::<usize>()] {
         self.0.to_le_bytes()
     }
