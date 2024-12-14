@@ -26,6 +26,15 @@ fn co_unsafe() {
 }
 
 #[divan::bench]
+fn co_writer() {
+    let mut out = [0; 14];
+    let (p, out) = divan::black_box((PACK, &mut out));
+
+    let res = co_writer_encode(&p, out);
+    assert!(res.is_ok());
+}
+
+#[divan::bench]
 fn co_safe() {
     let mut out = [0; 14];
     let (p, out) = divan::black_box((PACK, &mut out));
@@ -44,7 +53,20 @@ fn safe() {
 }
 
 fn co_unsafe_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
-    use co::encode_unsafe::EncodeExt;
+    use co::EncodeExt;
+
+    p.code
+        .then(p.key.as_bytes())
+        .u8(0)
+        .u32_be(p.val)
+        .then(p.slice)
+        .encode_(out)?;
+
+    Ok(())
+}
+
+fn co_writer_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
+    use co::EncodeExt;
 
     p.code
         .then(p.key.as_bytes())
@@ -57,7 +79,7 @@ fn co_unsafe_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
 }
 
 fn co_safe_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
-    use co::EncodeExt;
+    use co::encode_safe::EncodeExt;
 
     p.code
         .then(p.key.as_bytes())
@@ -69,11 +91,11 @@ fn co_safe_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
 
 fn safe_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
     let pack_len =
-          1             // code
-        + p.key.len()   // key
-        + 1             // nul byte
-        + 4             // val
-        + p.slice.len() // slice
+          size_of::<u8>()  // code
+        + p.key.len()      // key
+        + size_of::<u8>()  // nul byte
+        + size_of::<u32>() // val
+        + p.slice.len()    // slice
     ;
 
     if out.len() != pack_len {
@@ -83,16 +105,16 @@ fn safe_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
     let mut i = 0;
 
     out[i] = p.code;
-    i += 1;
+    i += size_of::<u8>();
 
     out[i..i + p.key.len()].copy_from_slice(p.key.as_bytes());
     i += p.key.len();
 
     out[i] = 0;
-    i += 1;
+    i += size_of::<u8>();
 
-    out[i..i + 4].copy_from_slice(&p.val.to_be_bytes());
-    i += 4;
+    out[i..i + size_of::<u32>()].copy_from_slice(&p.val.to_be_bytes());
+    i += size_of::<u32>();
 
     out[i..i + p.slice.len()].copy_from_slice(p.slice);
     i += p.slice.len();

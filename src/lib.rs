@@ -1,12 +1,16 @@
 #![cfg_attr(not(test), no_std)]
 #![doc = include_str!("../README.md")]
 
-mod encode_safe;
-pub mod encode_unsafe;
+pub mod encode_safe;
+mod encode_unsafe;
+mod writer;
 
 /// The crate's prelude.
 pub mod prelude {
     pub use crate::{Encode, EncodeExt as _};
 }
 
-pub use crate::encode_safe::{Encode, EncodeExt};
+pub use crate::{
+    encode_unsafe::{Buffer, Encode, EncodeExt, Size},
+    writer::Writer,
+};
