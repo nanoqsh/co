@@ -26,20 +26,11 @@ fn co_unsafe() {
 }
 
 #[divan::bench]
-fn co_writer() {
+fn co() {
     let mut out = [0; 14];
     let (p, out) = divan::black_box((PACK, &mut out));
 
-    let res = co_writer_encode(&p, out);
-    assert!(res.is_ok());
-}
-
-#[divan::bench]
-fn co_safe() {
-    let mut out = [0; 14];
-    let (p, out) = divan::black_box((PACK, &mut out));
-
-    let res = co_safe_encode(&p, out);
+    let res = co_encode(&p, out);
     assert!(res.is_ok());
 }
 
@@ -65,7 +56,7 @@ fn co_unsafe_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
     Ok(())
 }
 
-fn co_writer_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
+fn co_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
     use co::EncodeExt;
 
     p.code
@@ -76,17 +67,6 @@ fn co_writer_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
         .encode(out)?;
 
     Ok(())
-}
-
-fn co_safe_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
-    use co::encode_safe::EncodeExt;
-
-    p.code
-        .then(p.key.as_bytes())
-        .u8(0)
-        .u32_be(p.val)
-        .then(p.slice)
-        .encode(out)
 }
 
 fn safe_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
