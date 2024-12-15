@@ -2,7 +2,7 @@ use core::{mem::MaybeUninit, slice};
 
 /// The buffer writer.
 ///
-/// In this implementation, it is not required to be used directly,
+/// In this implementation it is not required to be used directly,
 /// use the [`Encode`](crate::Encode) trait instead.
 pub struct Writer<'buf> {
     buf: &'buf mut [MaybeUninit<u8>],

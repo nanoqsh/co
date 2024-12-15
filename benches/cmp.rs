@@ -17,7 +17,6 @@ impl fmt::Display for Case {
     sample_count = 100000,
     args = [
         Case(co, "co"),
-        Case(co_unsafe, "co_unsafe"),
         Case(safe, "safe"),
     ],
 )]
@@ -44,14 +43,6 @@ const PACK: Pack = Pack {
     slice: &[1, 2, 3],
 };
 
-fn co_unsafe() {
-    let mut out = [0; 14];
-    let (p, out) = divan::black_box((PACK, &mut out));
-
-    let res = co_unsafe_encode(&p, out);
-    assert!(res.is_ok());
-}
-
 fn co() {
     let mut out = [0; 14];
     let (p, out) = divan::black_box((PACK, &mut out));
@@ -66,19 +57,6 @@ fn safe() {
 
     let res = safe_encode(&p, out);
     assert!(res.is_ok());
-}
-
-fn co_unsafe_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
-    use co::EncodeExt;
-
-    p.code
-        .then(p.key.as_bytes())
-        .u8(0)
-        .u32_be(p.val)
-        .then(p.slice)
-        .encode_(out)?;
-
-    Ok(())
 }
 
 fn co_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {

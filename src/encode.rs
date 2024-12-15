@@ -21,7 +21,7 @@ use {
 ///   the value. In particular, `size` must consistently return the same value if
 ///   `self` has not changed.
 ///
-/// * `encode_writer` must initialize exactly `size` bytes in the passed buffer.
+/// * `encode_unchecked` must initialize exactly `size` bytes in the passed buffer.
 pub unsafe trait Encode {
     /// Returns byte size of encodable value.
     ///
@@ -31,18 +31,15 @@ pub unsafe trait Encode {
     /// [expand](Size::expand) method, the [`Encode`] trait cannot encode a value
     /// larger than `isize::MAX` bytes sequentially. However, it is not possible to
     /// create a [`Writer`] with a buffer that exceeds this limit, so calling
-    /// `encode_writer` with such a size will not be possible.
+    /// `encode_unchecked` with such a size will not be possible.
     fn size(&self) -> Size;
-
-    #[deprecated]
-    unsafe fn encode_unchecked(&self, buf: &mut [MaybeUninit<u8>]);
 
     /// Encodes the value to the buffer.
     ///
     /// # Safety
     ///
     /// The caller must ensure that `w.remaining() >= self.size()`.
-    unsafe fn encode_writer(&self, w: &mut Writer);
+    unsafe fn encode_unchecked(&self, w: &mut Writer);
 }
 
 /// A wrapper around `usize` representing a size value.
@@ -84,15 +81,9 @@ where
     }
 
     #[inline]
-    unsafe fn encode_unchecked(&self, buf: &mut [MaybeUninit<u8>]) {
+    unsafe fn encode_unchecked(&self, w: &mut Writer) {
         // SAFETY: delegate to inner impl
-        unsafe { (**self).encode_unchecked(buf) }
-    }
-
-    #[inline]
-    unsafe fn encode_writer(&self, w: &mut Writer) {
-        // SAFETY: delegate to inner impl
-        unsafe { (**self).encode_writer(w) }
+        unsafe { (**self).encode_unchecked(w) }
     }
 }
 
@@ -104,12 +95,7 @@ unsafe impl Encode for () {
     }
 
     #[inline]
-    unsafe fn encode_unchecked(&self, buf: &mut [MaybeUninit<u8>]) {
-        debug_assert!(buf.is_empty(), "trait invariant violation");
-    }
-
-    #[inline]
-    unsafe fn encode_writer(&self, _: &mut Writer) {}
+    unsafe fn encode_unchecked(&self, _: &mut Writer) {}
 }
 
 // SAFETY: copy a slice into the buffer
@@ -120,19 +106,7 @@ unsafe impl Encode for [u8] {
     }
 
     #[inline]
-    unsafe fn encode_unchecked(&self, buf: &mut [MaybeUninit<u8>]) {
-        debug_assert_eq!(self.size(), buf.len(), "trait invariant violation");
-
-        let bufptr: *mut u8 = buf.as_mut_ptr().cast();
-
-        // SAFETY:
-        // * copy all bytes from the slice
-        // * slice and `buf` are nonoverlapping since `buf` passed by `&mut [_]`
-        unsafe { bufptr.copy_from_nonoverlapping(self.as_ptr(), self.len()) }
-    }
-
-    #[inline]
-    unsafe fn encode_writer(&self, w: &mut Writer) {
+    unsafe fn encode_unchecked(&self, w: &mut Writer) {
         // SAFETY: `w.remaining() >= self.len()`
         unsafe { w.write_slice(self) }
     }
@@ -146,15 +120,9 @@ unsafe impl<const N: usize> Encode for [u8; N] {
     }
 
     #[inline]
-    unsafe fn encode_unchecked(&self, buf: &mut [MaybeUninit<u8>]) {
+    unsafe fn encode_unchecked(&self, w: &mut Writer) {
         // SAFETY: delegate to slice impl
-        unsafe { self[..].encode_unchecked(buf) }
-    }
-
-    #[inline]
-    unsafe fn encode_writer(&self, w: &mut Writer) {
-        // SAFETY: delegate to slice impl
-        unsafe { self[..].encode_writer(w) }
+        unsafe { self[..].encode_unchecked(w) }
     }
 }
 
@@ -166,17 +134,7 @@ unsafe impl Encode for u8 {
     }
 
     #[inline]
-    unsafe fn encode_unchecked(&self, buf: &mut [MaybeUninit<u8>]) {
-        debug_assert_eq!(self.size(), buf.len(), "trait invariant violation");
-
-        // SAFETY: `buf.len()` == 1
-        unsafe {
-            *buf.get_unchecked_mut(0) = MaybeUninit::new(*self);
-        }
-    }
-
-    #[inline]
-    unsafe fn encode_writer(&self, w: &mut Writer) {
+    unsafe fn encode_unchecked(&self, w: &mut Writer) {
         // SAFETY: `w.remaining() >= 1`
         unsafe { w.write_byte(*self) }
     }
@@ -199,31 +157,13 @@ where
     }
 
     #[inline]
-    unsafe fn encode_unchecked(&self, buf: &mut [MaybeUninit<u8>]) {
-        debug_assert_eq!(self.size(), buf.len(), "trait invariant violation");
-
-        let Self(a, b) = self;
-
-        let Size(a_size) = a.size();
-
-        // SAFETY: `buf` length == `a.size() + b.size()`, so it can be splitted at `a.size()`
-        let (head, tail) = unsafe { buf.split_at_mut_unchecked(a_size as usize) };
-
-        // SAFETY: head length == `a.size()`
-        unsafe { a.encode_unchecked(head) }
-
-        // SAFETY: tail length == `b.size()`
-        unsafe { b.encode_unchecked(tail) }
-    }
-
-    #[inline]
-    unsafe fn encode_writer(&self, w: &mut Writer) {
+    unsafe fn encode_unchecked(&self, w: &mut Writer) {
         let Self(a, b) = self;
 
         // SAFETY: `w.remaining() >= a.size() + b.size()`
         unsafe {
-            a.encode_writer(w);
-            b.encode_writer(w);
+            a.encode_unchecked(w);
+            b.encode_unchecked(w);
         }
     }
 }
@@ -327,29 +267,7 @@ where
     }
 
     #[inline]
-    unsafe fn encode_unchecked(&self, buf: &mut [MaybeUninit<u8>]) {
-        // SAFETY: the caller must ensure `s.len() == N`
-        unsafe fn as_array_mut<T, const N: usize>(s: &mut [T]) -> &mut [T; N] {
-            debug_assert_eq!(s.len(), N, "lengths don't match");
-
-            let sptr: *mut [T; N] = s.as_mut_ptr().cast();
-
-            // SAFETY:
-            // * cast the slice with `N` length
-            //   to an array with `N` length
-            unsafe { &mut *sptr }
-        }
-
-        debug_assert_eq!(self.size(), buf.len(), "trait invariant violation");
-
-        // SAFETY: `s.len() == N` by outer caller invariant
-        let array = unsafe { as_array_mut(buf) };
-
-        *array = self.0.bytes().map(MaybeUninit::new);
-    }
-
-    #[inline]
-    unsafe fn encode_writer(&self, w: &mut Writer) {
+    unsafe fn encode_unchecked(&self, w: &mut Writer) {
         // SAFETY: `w.remaining() >= N`
         unsafe { w.write_slice(&self.0.bytes()) }
     }
@@ -607,29 +525,6 @@ pub trait EncodeExt: Encode + Sized {
         Then(self, Plain(Le(u)))
     }
 
-    #[inline]
-    #[deprecated]
-    fn encode_<B>(self, buf: &mut B) -> Result<&mut [u8], usize>
-    where
-        B: Buffer + ?Sized,
-    {
-        let buf = buf.buffer();
-        let Size(size) = self.size();
-        if size == buf.len() {
-            // SAFETY: `buf` length is checked above
-            unsafe { self.encode_unchecked(buf) }
-
-            // SAFETY:
-            // * by `Encode` trait invariant all bytes of `buf` was initialized,
-            //   so cast `&mut [MaybeUninit<u8>]` to `&mut [u8]`
-            let init = unsafe { slice::from_raw_parts_mut(buf.as_mut_ptr().cast(), buf.len()) };
-
-            Ok(init)
-        } else {
-            Err(size)
-        }
-    }
-
     /// Encodes the sequence and writes the result into the buffer.
     ///
     /// Returns [`Ok`] with a slice of the written data if the buffer size matches the
@@ -674,7 +569,7 @@ pub trait EncodeExt: Encode + Sized {
             debug_assert_eq!(w.remaining(), size);
 
             // SAFETY: `w.remaining() == self.size()`
-            unsafe { self.encode_writer(&mut w) }
+            unsafe { self.encode_unchecked(&mut w) }
 
             // Afterward, the buffer should be completely filled
             debug_assert_eq!(w.remaining(), 0);

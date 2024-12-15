@@ -9,15 +9,6 @@ const CODE: [u8; 14] = [
 ];
 
 #[test]
-fn co_unsafe_pack() {
-    let mut out = [0; CODE.len()];
-    let res = co_unsafe_encode(&PACK, &mut out);
-
-    assert!(res.is_ok());
-    assert_eq!(out, CODE);
-}
-
-#[test]
 fn co_pack() {
     let mut out = [0; CODE.len()];
     let res = co_encode(&PACK, &mut out);
