@@ -41,7 +41,7 @@ impl<'buf> Writer<'buf> {
     ///   to write the entire slice i.e. `self.remaining() >= s.len()`.
     #[inline]
     pub(crate) unsafe fn write_slice(&mut self, s: &[u8]) {
-        debug_assert!(self.remaining() >= s.len());
+        debug_assert!(self.remaining() >= s.len(), "writer invariant violation");
 
         let ptr = self.as_mut_ptr();
 
@@ -59,7 +59,10 @@ impl<'buf> Writer<'buf> {
     ///   to write the byte i.e. `self.remaining() >= 1`.
     #[inline]
     pub(crate) unsafe fn write_byte(&mut self, u: u8) {
-        debug_assert!(self.remaining() >= size_of::<u8>());
+        debug_assert!(
+            self.remaining() >= size_of::<u8>(),
+            "writer invariant violation",
+        );
 
         let ptr = self.as_mut_ptr();
 
@@ -76,7 +79,7 @@ impl<'buf> Writer<'buf> {
     ///   this means the whole buffer was initialized.
     #[inline]
     pub(crate) unsafe fn init(self) -> &'buf mut [u8] {
-        debug_assert_eq!(self.remaining(), 0);
+        debug_assert_eq!(self.remaining(), 0, "writer invariant violation");
 
         // SAFETY: checked by the caller
         unsafe { slice::from_raw_parts_mut(self.buf.as_mut_ptr().cast(), self.buf.len()) }

@@ -47,16 +47,14 @@ fn co() {
     let mut out = [0; 14];
     let (p, out) = divan::black_box((PACK, &mut out));
 
-    let res = co_encode(&p, out);
-    assert!(res.is_ok());
+    co_encode(&p, out).expect("encoding must be successful");
 }
 
 fn safe() {
     let mut out = [0; 14];
     let (p, out) = divan::black_box((PACK, &mut out));
 
-    let res = safe_encode(&p, out);
-    assert!(res.is_ok());
+    safe_encode(&p, out).expect("encoding must be successful");
 }
 
 fn co_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
@@ -103,7 +101,7 @@ fn safe_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
     i += p.slice.len();
 
     // used in test mod
-    debug_assert_eq!(i, out.len());
+    debug_assert_eq!(i, out.len(), "fill the whole buffer");
 
     Ok(())
 }

@@ -135,8 +135,9 @@ unsafe impl Encode for u8 {
 struct Then<A, B>(A, B);
 
 // SAFETY:
-// * split `buf` into two parts at `a.size()`
 // * delegate impls to parts
+// * write to the buffer
+//   `a.size()` bytes and `b.size()` bytes
 unsafe impl<A, B> Encode for Then<A, B>
 where
     A: Encode,
@@ -152,11 +153,11 @@ where
     unsafe fn encode_unchecked(&self, w: &mut Writer) {
         let Self(a, b) = self;
 
-        // SAFETY: `w.remaining() >= a.size() + b.size()`
-        unsafe {
-            a.encode_unchecked(w);
-            b.encode_unchecked(w);
-        }
+        // SAFETY: `w.remaining() >= a.size()`
+        unsafe { a.encode_unchecked(w) }
+
+        // SAFETY: `w.remaining() >= b.size()`
+        unsafe { b.encode_unchecked(w) }
     }
 }
 
@@ -467,14 +468,20 @@ pub trait EncodeExt: Encode + Sized {
         if size == buf.len() {
             let mut w = Writer::new(buf);
 
-            // The buffer is not filled from the start
-            debug_assert_eq!(w.remaining(), size);
+            debug_assert_eq!(
+                w.remaining(),
+                size,
+                "the buffer must not be filled at the beginning",
+            );
 
             // SAFETY: `w.remaining() == self.size()`
             unsafe { self.encode_unchecked(&mut w) }
 
-            // Afterward, the buffer should be completely filled
-            debug_assert_eq!(w.remaining(), 0);
+            debug_assert_eq!(
+                w.remaining(),
+                0,
+                "afterward the buffer must be completely filled",
+            );
 
             // SAFETY:
             // * since the `Encode` implementation writes
