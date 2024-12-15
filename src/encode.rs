@@ -62,14 +62,6 @@ impl Size {
     }
 }
 
-// TODO: remove
-impl PartialEq<usize> for Size {
-    #[inline]
-    fn eq(&self, &rhs: &usize) -> bool {
-        self.0 == rhs
-    }
-}
-
 // SAFETY: delegate to inner impl
 unsafe impl<E> Encode for &E
 where
@@ -278,6 +270,9 @@ where
 /// This trait allows for appending an encoding sequence
 /// by encodable values.
 ///
+/// Integers are encoded in big-endian byte order by default.
+/// To encode integers in little-endian order use [`LittleEndianEncodeExt`].
+///
 /// # Examples
 ///
 /// ```rust
@@ -348,31 +343,13 @@ pub trait EncodeExt: Encode + Sized {
     /// use co::EncodeExt;
     ///
     /// let mut code = [0; 2];
-    /// ().u16_be(255).encode(&mut code);
+    /// ().u16(255).encode(&mut code);
     ///
     /// assert_eq!(code, [0, 0xFF]);
     /// ```
     #[inline]
-    fn u16_be(self, u: u16) -> impl Encode {
+    fn u16(self, u: u16) -> impl Encode {
         Then(self, Plain(Be(u)))
-    }
-
-    /// Appends a `u16` value to the encodable
-    /// sequence with little-endian byte ordering.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use co::EncodeExt;
-    ///
-    /// let mut code = [0; 2];
-    /// ().u16_le(255).encode(&mut code);
-    ///
-    /// assert_eq!(code, [0xFF, 0]);
-    /// ```
-    #[inline]
-    fn u16_le(self, u: u16) -> impl Encode {
-        Then(self, Plain(Le(u)))
     }
 
     /// Appends a `u32` value to the encodable
@@ -384,31 +361,13 @@ pub trait EncodeExt: Encode + Sized {
     /// use co::EncodeExt;
     ///
     /// let mut code = [0; 4];
-    /// ().u32_be(255).encode(&mut code);
+    /// ().u32(255).encode(&mut code);
     ///
     /// assert_eq!(code, [0, 0, 0, 0xFF]);
     /// ```
     #[inline]
-    fn u32_be(self, u: u32) -> impl Encode {
+    fn u32(self, u: u32) -> impl Encode {
         Then(self, Plain(Be(u)))
-    }
-
-    /// Appends a `u32` value to the encodable
-    /// sequence with little-endian byte ordering.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use co::EncodeExt;
-    ///
-    /// let mut code = [0; 4];
-    /// ().u32_le(255).encode(&mut code);
-    ///
-    /// assert_eq!(code, [0xFF, 0, 0, 0]);
-    /// ```
-    #[inline]
-    fn u32_le(self, u: u32) -> impl Encode {
-        Then(self, Plain(Le(u)))
     }
 
     /// Appends a `u64` value to the encodable
@@ -420,31 +379,13 @@ pub trait EncodeExt: Encode + Sized {
     /// use co::EncodeExt;
     ///
     /// let mut code = [0; 8];
-    /// ().u64_be(255).encode(&mut code);
+    /// ().u64(255).encode(&mut code);
     ///
     /// assert_eq!(code, [0, 0, 0, 0, 0, 0, 0, 0xFF]);
     /// ```
     #[inline]
-    fn u64_be(self, u: u64) -> impl Encode {
+    fn u64(self, u: u64) -> impl Encode {
         Then(self, Plain(Be(u)))
-    }
-
-    /// Appends a `u64` value to the encodable
-    /// sequence with little-endian byte ordering.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use co::EncodeExt;
-    ///
-    /// let mut code = [0; 8];
-    /// ().u64_le(255).encode(&mut code);
-    ///
-    /// assert_eq!(code, [0xFF, 0, 0, 0, 0, 0, 0, 0]);
-    /// ```
-    #[inline]
-    fn u64_le(self, u: u64) -> impl Encode {
-        Then(self, Plain(Le(u)))
     }
 
     /// Appends a `u128` value to the encodable
@@ -456,7 +397,7 @@ pub trait EncodeExt: Encode + Sized {
     /// use co::EncodeExt;
     ///
     /// let mut code = [0; 16];
-    /// ().u128_be(255).encode(&mut code);
+    /// ().u128(255).encode(&mut code);
     ///
     /// assert_eq!(code, [
     ///     0, 0, 0, 0, 0, 0, 0, 0,
@@ -464,29 +405,8 @@ pub trait EncodeExt: Encode + Sized {
     /// ]);
     /// ```
     #[inline]
-    fn u128_be(self, u: u128) -> impl Encode {
+    fn u128(self, u: u128) -> impl Encode {
         Then(self, Plain(Be(u)))
-    }
-
-    /// Appends a `u128` value to the encodable
-    /// sequence with little-endian byte ordering.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use co::EncodeExt;
-    ///
-    /// let mut code = [0; 16];
-    /// ().u128_le(255).encode(&mut code);
-    ///
-    /// assert_eq!(code, [
-    ///     0xFF, 0, 0, 0, 0, 0, 0, 0,
-    ///     0, 0, 0, 0, 0, 0, 0, 0,
-    /// ]);
-    /// ```
-    #[inline]
-    fn u128_le(self, u: u128) -> impl Encode {
-        Then(self, Plain(Le(u)))
     }
 
     /// Appends a `usize` value to the encodable
@@ -498,31 +418,13 @@ pub trait EncodeExt: Encode + Sized {
     /// use co::EncodeExt;
     ///
     /// let mut code = [0; size_of::<usize>()];
-    /// ().usize_be(255).encode(&mut code);
+    /// ().usize(255).encode(&mut code);
     ///
     /// assert_eq!(code.last(), Some(&0xFF));
     /// ```
     #[inline]
-    fn usize_be(self, u: usize) -> impl Encode {
+    fn usize(self, u: usize) -> impl Encode {
         Then(self, Plain(Be(u)))
-    }
-
-    /// Appends a `usize` value to the encodable
-    /// sequence with little-endian byte ordering.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use co::EncodeExt;
-    ///
-    /// let mut code = [0; size_of::<usize>()];
-    /// ().usize_le(255).encode(&mut code);
-    ///
-    /// assert_eq!(code.first(), Some(&0xFF));
-    /// ```
-    #[inline]
-    fn usize_le(self, u: usize) -> impl Encode {
-        Then(self, Plain(Le(u)))
     }
 
     /// Encodes the sequence and writes the result into the buffer.
@@ -590,6 +492,104 @@ pub trait EncodeExt: Encode + Sized {
 }
 
 impl<E> EncodeExt for E where E: Encode {}
+
+/// Extension trait for encoding sequences with little-endian byte ordering.
+pub trait LittleEndianEncodeExt: Encode + Sized {
+    /// Appends a `u16` value to the encodable
+    /// sequence with little-endian byte ordering.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use co::{EncodeExt, LittleEndianEncodeExt};
+    ///
+    /// let mut code = [0; 2];
+    /// ().u16_le(255).encode(&mut code);
+    ///
+    /// assert_eq!(code, [0xFF, 0]);
+    /// ```
+    #[inline]
+    fn u16_le(self, u: u16) -> impl Encode {
+        Then(self, Plain(Le(u)))
+    }
+
+    /// Appends a `u32` value to the encodable
+    /// sequence with little-endian byte ordering.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use co::{EncodeExt, LittleEndianEncodeExt};
+    ///
+    /// let mut code = [0; 4];
+    /// ().u32_le(255).encode(&mut code);
+    ///
+    /// assert_eq!(code, [0xFF, 0, 0, 0]);
+    /// ```
+    #[inline]
+    fn u32_le(self, u: u32) -> impl Encode {
+        Then(self, Plain(Le(u)))
+    }
+
+    /// Appends a `u64` value to the encodable
+    /// sequence with little-endian byte ordering.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use co::{EncodeExt, LittleEndianEncodeExt};
+    ///
+    /// let mut code = [0; 8];
+    /// ().u64_le(255).encode(&mut code);
+    ///
+    /// assert_eq!(code, [0xFF, 0, 0, 0, 0, 0, 0, 0]);
+    /// ```
+    #[inline]
+    fn u64_le(self, u: u64) -> impl Encode {
+        Then(self, Plain(Le(u)))
+    }
+
+    /// Appends a `u128` value to the encodable
+    /// sequence with little-endian byte ordering.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use co::{EncodeExt, LittleEndianEncodeExt};
+    ///
+    /// let mut code = [0; 16];
+    /// ().u128_le(255).encode(&mut code);
+    ///
+    /// assert_eq!(code, [
+    ///     0xFF, 0, 0, 0, 0, 0, 0, 0,
+    ///     0, 0, 0, 0, 0, 0, 0, 0,
+    /// ]);
+    /// ```
+    #[inline]
+    fn u128_le(self, u: u128) -> impl Encode {
+        Then(self, Plain(Le(u)))
+    }
+
+    /// Appends a `usize` value to the encodable
+    /// sequence with little-endian byte ordering.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use co::{EncodeExt, LittleEndianEncodeExt};
+    ///
+    /// let mut code = [0; size_of::<usize>()];
+    /// ().usize_le(255).encode(&mut code);
+    ///
+    /// assert_eq!(code.first(), Some(&0xFF));
+    /// ```
+    #[inline]
+    fn usize_le(self, u: usize) -> impl Encode {
+        Then(self, Plain(Le(u)))
+    }
+}
+
+impl<E> LittleEndianEncodeExt for E where E: Encode {}
 
 /// A trait for accessing a maybe uninitialized mutable buffer.
 pub trait Buffer {

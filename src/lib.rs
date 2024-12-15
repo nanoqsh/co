@@ -10,6 +10,6 @@ pub mod prelude {
 }
 
 pub use crate::{
-    encode::{Buffer, Encode, EncodeExt, Size},
+    encode::{Buffer, Encode, EncodeExt, LittleEndianEncodeExt, Size},
     writer::Writer,
 };

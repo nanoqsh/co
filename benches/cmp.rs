@@ -65,7 +65,7 @@ fn co_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
     p.code
         .then(p.key.as_bytes())
         .u8(0)
-        .u32_be(p.val)
+        .u32(p.val)
         .then(p.slice)
         .encode(out)?;
 
