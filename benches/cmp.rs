@@ -1,5 +1,33 @@
+use {divan::Bencher, std::fmt};
+
 fn main() {
     divan::main();
+}
+
+#[derive(Copy, Clone)]
+struct Case(fn(), &'static str);
+
+impl fmt::Display for Case {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.1.fmt(f)
+    }
+}
+
+#[divan::bench(
+    sample_count = 100000,
+    args = [
+        Case(co, "co"),
+        Case(co_unsafe, "co_unsafe"),
+        Case(safe, "safe"),
+    ],
+)]
+fn bench(ben: Bencher, Case(f, _): Case) {
+    // warmup
+    for _ in 0..100000000 {
+        f();
+    }
+
+    ben.bench(f);
 }
 
 struct Pack {
@@ -16,7 +44,6 @@ const PACK: Pack = Pack {
     slice: &[1, 2, 3],
 };
 
-#[divan::bench]
 fn co_unsafe() {
     let mut out = [0; 14];
     let (p, out) = divan::black_box((PACK, &mut out));
@@ -25,7 +52,6 @@ fn co_unsafe() {
     assert!(res.is_ok());
 }
 
-#[divan::bench]
 fn co() {
     let mut out = [0; 14];
     let (p, out) = divan::black_box((PACK, &mut out));
@@ -34,7 +60,6 @@ fn co() {
     assert!(res.is_ok());
 }
 
-#[divan::bench]
 fn safe() {
     let mut out = [0; 14];
     let (p, out) = divan::black_box((PACK, &mut out));
