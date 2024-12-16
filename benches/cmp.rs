@@ -30,28 +30,36 @@ fn bench(ben: Bencher, Case(f, _): Case) {
 }
 
 struct Pack {
-    code: u8,
-    key: &'static str,
-    val: u32,
-    slice: &'static [u8],
+    a: u8,
+    b: &'static [u8],
+    c: u32,
+    d: u8,
+    e: &'static [u8],
+    f: u8,
+    g: u64,
+    h: &'static [u8],
 }
 
 const PACK: Pack = Pack {
-    code: 0,
-    key: "hello",
-    val: 37,
-    slice: &[1, 2, 3],
+    a: 0,
+    b: &[1, 2, 3, 4, 5, 6],
+    c: 1,
+    d: 2,
+    e: &[1, 2, 3, 4, 5, 6],
+    f: 3,
+    g: 4,
+    h: &[1, 2, 3, 4, 5, 6],
 };
 
 fn co() {
-    let mut out = [0; 14];
+    let mut out = [0; 33];
     let (p, out) = divan::black_box((PACK, &mut out));
 
     co_encode(&p, out).expect("encoding must be successful");
 }
 
 fn safe() {
-    let mut out = [0; 14];
+    let mut out = [0; 33];
     let (p, out) = divan::black_box((PACK, &mut out));
 
     safe_encode(&p, out).expect("encoding must be successful");
@@ -60,11 +68,13 @@ fn safe() {
 fn co_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
     use co::EncodeExt;
 
-    p.code
-        .then(p.key.as_bytes())
-        .u8(0)
-        .u32(p.val)
-        .then(p.slice)
+    p.a.then(p.b)
+        .u32(p.c)
+        .u8(p.d)
+        .then(p.e)
+        .u8(p.f)
+        .u64(p.g)
+        .then(p.h)
         .encode(out)?;
 
     Ok(())
@@ -72,11 +82,14 @@ fn co_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
 
 fn safe_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
     let pack_len =
-          size_of::<u8>()  // code
-        + p.key.len()      // key
-        + size_of::<u8>()  // nul byte
-        + size_of::<u32>() // val
-        + p.slice.len()    // slice
+          size_of::<u8>()  // a
+        + p.b.len()        // b
+        + size_of::<u32>() // c
+        + size_of::<u8>()  // d
+        + p.e.len()        // e
+        + size_of::<u8>()  // f
+        + size_of::<u64>() // g
+        + p.h.len()        // h
     ;
 
     if out.len() != pack_len {
@@ -85,20 +98,29 @@ fn safe_encode(p: &Pack, out: &mut [u8]) -> Result<(), usize> {
 
     let mut i = 0;
 
-    out[i] = p.code;
+    out[i] = p.a;
     i += size_of::<u8>();
 
-    out[i..i + p.key.len()].copy_from_slice(p.key.as_bytes());
-    i += p.key.len();
+    out[i..i + p.b.len()].copy_from_slice(p.b);
+    i += p.b.len();
 
-    out[i] = 0;
-    i += size_of::<u8>();
-
-    out[i..i + size_of::<u32>()].copy_from_slice(&p.val.to_be_bytes());
+    out[i..i + size_of::<u32>()].copy_from_slice(&p.c.to_be_bytes());
     i += size_of::<u32>();
 
-    out[i..i + p.slice.len()].copy_from_slice(p.slice);
-    i += p.slice.len();
+    out[i..i + size_of::<u8>()].copy_from_slice(&p.d.to_be_bytes());
+    i += size_of::<u8>();
+
+    out[i..i + p.e.len()].copy_from_slice(p.e);
+    i += p.e.len();
+
+    out[i..i + size_of::<u8>()].copy_from_slice(&p.f.to_be_bytes());
+    i += size_of::<u8>();
+
+    out[i..i + size_of::<u64>()].copy_from_slice(&p.g.to_be_bytes());
+    i += size_of::<u64>();
+
+    out[i..i + p.h.len()].copy_from_slice(p.h);
+    i += p.h.len();
 
     // used in test mod
     debug_assert_eq!(i, out.len(), "fill the whole buffer");
