@@ -162,111 +162,6 @@ where
     }
 }
 
-#[derive(Clone, Copy)]
-struct Be<T>(T);
-
-#[derive(Clone, Copy)]
-struct Le<T>(T);
-
-trait Bytes<const N: usize>: Copy {
-    fn bytes(self) -> [u8; N];
-}
-
-impl Bytes<{ size_of::<u16>() }> for Be<u16> {
-    #[inline]
-    fn bytes(self) -> [u8; size_of::<u16>()] {
-        self.0.to_be_bytes()
-    }
-}
-
-impl Bytes<{ size_of::<u16>() }> for Le<u16> {
-    #[inline]
-    fn bytes(self) -> [u8; size_of::<u16>()] {
-        self.0.to_le_bytes()
-    }
-}
-
-impl Bytes<{ size_of::<u32>() }> for Be<u32> {
-    #[inline]
-    fn bytes(self) -> [u8; size_of::<u32>()] {
-        self.0.to_be_bytes()
-    }
-}
-
-impl Bytes<{ size_of::<u32>() }> for Le<u32> {
-    #[inline]
-    fn bytes(self) -> [u8; size_of::<u32>()] {
-        self.0.to_le_bytes()
-    }
-}
-
-impl Bytes<{ size_of::<u64>() }> for Be<u64> {
-    #[inline]
-    fn bytes(self) -> [u8; size_of::<u64>()] {
-        self.0.to_be_bytes()
-    }
-}
-
-impl Bytes<{ size_of::<u64>() }> for Le<u64> {
-    #[inline]
-    fn bytes(self) -> [u8; size_of::<u64>()] {
-        self.0.to_le_bytes()
-    }
-}
-
-impl Bytes<{ size_of::<u128>() }> for Be<u128> {
-    #[inline]
-    fn bytes(self) -> [u8; size_of::<u128>()] {
-        self.0.to_be_bytes()
-    }
-}
-
-impl Bytes<{ size_of::<u128>() }> for Le<u128> {
-    #[inline]
-    fn bytes(self) -> [u8; size_of::<u128>()] {
-        self.0.to_le_bytes()
-    }
-}
-
-impl Bytes<{ size_of::<usize>() }> for Be<usize> {
-    #[inline]
-    fn bytes(self) -> [u8; size_of::<usize>()] {
-        self.0.to_be_bytes()
-    }
-}
-
-impl Bytes<{ size_of::<usize>() }> for Le<usize> {
-    #[inline]
-    fn bytes(self) -> [u8; size_of::<usize>()] {
-        self.0.to_le_bytes()
-    }
-}
-
-struct Plain<B, const N: usize>(B);
-
-// SAFETY:
-// * initialze `N` bytes, so `size` returns exatly `N`
-// * copy bytes from `Bytes` trait impls, even when `Bytes`
-//   is a safe trait, it returns fully initialized bytes,
-//   since the array type guarantees initialization.
-//   (actually `Bytes` can also be public since custom impl
-//   doesn't break the safety)
-unsafe impl<B, const N: usize> Encode for Plain<B, N>
-where
-    B: Bytes<N>,
-{
-    #[inline]
-    fn size(&self) -> Size {
-        Size(N)
-    }
-
-    #[inline]
-    unsafe fn encode_unchecked(&self, w: &mut Writer) {
-        // SAFETY: `w.remaining() >= N`
-        unsafe { w.write_slice(&self.0.bytes()) }
-    }
-}
-
 /// An extension trait for [encodable](Encode) types.
 ///
 /// This trait allows for appending an encoding sequence
@@ -351,7 +246,7 @@ pub trait EncodeExt: Encode + Sized {
     /// ```
     #[inline]
     fn u16(self, u: u16) -> impl Encode {
-        Then(self, Plain(Be(u)))
+        Then(self, u16::to_be_bytes(u))
     }
 
     /// Appends a `u32` value to the encodable
@@ -369,7 +264,7 @@ pub trait EncodeExt: Encode + Sized {
     /// ```
     #[inline]
     fn u32(self, u: u32) -> impl Encode {
-        Then(self, Plain(Be(u)))
+        Then(self, u32::to_be_bytes(u))
     }
 
     /// Appends a `u64` value to the encodable
@@ -387,7 +282,7 @@ pub trait EncodeExt: Encode + Sized {
     /// ```
     #[inline]
     fn u64(self, u: u64) -> impl Encode {
-        Then(self, Plain(Be(u)))
+        Then(self, u64::to_be_bytes(u))
     }
 
     /// Appends a `u128` value to the encodable
@@ -408,7 +303,7 @@ pub trait EncodeExt: Encode + Sized {
     /// ```
     #[inline]
     fn u128(self, u: u128) -> impl Encode {
-        Then(self, Plain(Be(u)))
+        Then(self, u128::to_be_bytes(u))
     }
 
     /// Appends a `usize` value to the encodable
@@ -426,7 +321,7 @@ pub trait EncodeExt: Encode + Sized {
     /// ```
     #[inline]
     fn usize(self, u: usize) -> impl Encode {
-        Then(self, Plain(Be(u)))
+        Then(self, usize::to_be_bytes(u))
     }
 
     /// Encodes the sequence and writes the result into the buffer.
@@ -518,7 +413,7 @@ pub trait LittleEndianEncodeExt: Encode + Sized {
     /// ```
     #[inline]
     fn u16_le(self, u: u16) -> impl Encode {
-        Then(self, Plain(Le(u)))
+        Then(self, u16::to_le_bytes(u))
     }
 
     /// Appends a `u32` value to the encodable
@@ -536,7 +431,7 @@ pub trait LittleEndianEncodeExt: Encode + Sized {
     /// ```
     #[inline]
     fn u32_le(self, u: u32) -> impl Encode {
-        Then(self, Plain(Le(u)))
+        Then(self, u32::to_le_bytes(u))
     }
 
     /// Appends a `u64` value to the encodable
@@ -554,7 +449,7 @@ pub trait LittleEndianEncodeExt: Encode + Sized {
     /// ```
     #[inline]
     fn u64_le(self, u: u64) -> impl Encode {
-        Then(self, Plain(Le(u)))
+        Then(self, u64::to_le_bytes(u))
     }
 
     /// Appends a `u128` value to the encodable
@@ -575,7 +470,7 @@ pub trait LittleEndianEncodeExt: Encode + Sized {
     /// ```
     #[inline]
     fn u128_le(self, u: u128) -> impl Encode {
-        Then(self, Plain(Le(u)))
+        Then(self, u128::to_le_bytes(u))
     }
 
     /// Appends a `usize` value to the encodable
@@ -593,7 +488,7 @@ pub trait LittleEndianEncodeExt: Encode + Sized {
     /// ```
     #[inline]
     fn usize_le(self, u: usize) -> impl Encode {
-        Then(self, Plain(Le(u)))
+        Then(self, usize::to_le_bytes(u))
     }
 }
 
