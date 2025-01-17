@@ -16,7 +16,7 @@ rust-version = "1.83"
 divan = "0.1"
 
 [[bench]]
-name = "cmp"
+name = "encode"
 harness = false
 
 [lints.clippy]

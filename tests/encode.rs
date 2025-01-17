@@ -1,4 +1,4 @@
-include!("../benches/cmp.rs");
+include!("../benches/encode.rs");
 
 const CODE: [u8; 33] = [
     0, //                      a

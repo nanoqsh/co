@@ -27,11 +27,12 @@ pub unsafe trait Encode {
     ///
     /// # Note
     ///
-    /// Although the [`Size`] type contains a `usize` and checks for overflow in its
-    /// [expand](Size::expand) method, the [`Encode`] trait cannot encode a value
-    /// larger than `isize::MAX` bytes sequentially. However, it is not possible to
-    /// create a [`Writer`] with a buffer that exceeds this limit, so calling
-    /// `encode_unchecked` with such a size will not be possible.
+    /// Although the [`Size`] type contains a `usize` and checks for overflow in
+    /// its [expand](Size::expand) method, the [`Encode`] trait cannot encode a
+    /// value larger than `isize::MAX` bytes sequentially. However, it is
+    /// impossible to create a [`Writer`] with a buffer that exceeds this limit, so
+    /// calling [`encode_unchecked`](Encode::encode_unchecked) with such a size is
+    /// also impossible.
     fn size(&self) -> Size;
 
     /// Encodes the value to the buffer.
@@ -284,7 +285,7 @@ where
 /// // Encode a sequence of bytes to the `code` buffer
 /// b'h'
 ///     .then(b"el") // `then` accepts any encodable
-///     .u8(b'l')    // a special method for u8 type
+///     .u8(b'l')    // `u8` is a special method for u8 type
 ///     .u8(b'o')
 ///     .encode(&mut code);
 ///
