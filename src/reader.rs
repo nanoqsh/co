@@ -10,6 +10,11 @@ impl<'buf> Reader<'buf> {
     }
 
     #[inline]
+    pub(crate) fn remaining(&self) -> usize {
+        self.buf.len() - self.pos
+    }
+
+    #[inline]
     pub(crate) fn read_byte(&mut self) -> Option<u8> {
         let &byte = self.buf.get(self.pos)?;
         self.pos += 1;
