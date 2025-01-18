@@ -1,3 +1,7 @@
+/// The buffer reader.
+///
+/// In this implementation it is not required to be used directly,
+/// use the [decoder](crate::Decoder) type instead.
 pub struct Reader<'buf> {
     buf: &'buf [u8],
     pos: usize,
@@ -23,8 +27,25 @@ impl<'buf> Reader<'buf> {
 
     #[inline]
     pub(crate) fn read_slice(&mut self, n: usize) -> Option<&'buf [u8]> {
-        let slice = self.buf.get(self.pos..self.pos + n)?;
-        self.pos += n;
+        debug_assert!(self.pos <= self.buf.len(), "reader invariant violation");
+
+        let new_pos = usize::checked_add(self.pos, n).expect("the position cannot overflow");
+        if new_pos > self.buf.len() {
+            return None;
+        }
+
+        debug_assert!(
+            new_pos <= self.buf.len(),
+            "`new_pos` must not exceed the buffer length",
+        );
+
+        // SAFETY:
+        // * `pos <= buf.len()` guaranteed by the reader invariant
+        // * `pos + n` cannot overflow
+        // * `pos + n <= buf.len()` checked above
+        let slice = unsafe { self.buf.get_unchecked(self.pos..new_pos) };
+
+        self.pos = new_pos;
         Some(slice)
     }
 
