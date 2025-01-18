@@ -6,42 +6,61 @@ use crate::reader::Reader;
 ///
 /// This trait is intended for low-level implementations. Use the
 /// [decoder](Decoder) for convenient decoding of byte sequences.
-pub trait Decode<'buf, S = ()>: Sized {
-    fn decode(r: &mut Reader<'buf>, state: S) -> Option<Self>;
+pub trait Decode<'buf>: Sized {
+    fn decode(r: &mut Reader<'buf>) -> Option<Self>;
 }
 
 impl Decode<'_> for () {
     #[inline]
-    fn decode(_: &mut Reader<'_>, _: ()) -> Option<Self> {
+    fn decode(_: &mut Reader<'_>) -> Option<Self> {
         Some(())
     }
 }
 
 impl Decode<'_> for u8 {
     #[inline]
-    fn decode(r: &mut Reader<'_>, _: ()) -> Option<Self> {
+    fn decode(r: &mut Reader<'_>) -> Option<Self> {
         r.read_byte()
-    }
-}
-
-impl<'buf> Decode<'buf, usize> for &'buf [u8] {
-    #[inline]
-    fn decode(r: &mut Reader<'buf>, len: usize) -> Option<Self> {
-        r.read_slice(len)
     }
 }
 
 impl<'buf, const N: usize> Decode<'buf> for &'buf [u8; N] {
     #[inline]
-    fn decode(r: &mut Reader<'buf>, _: ()) -> Option<Self> {
+    fn decode(r: &mut Reader<'buf>) -> Option<Self> {
         r.read_array()
     }
 }
 
 impl<'buf, const N: usize> Decode<'buf> for [u8; N] {
     #[inline]
-    fn decode(r: &mut Reader<'buf>, _: ()) -> Option<Self> {
+    fn decode(r: &mut Reader<'buf>) -> Option<Self> {
         r.read_array().copied()
+    }
+}
+
+pub trait DecodeWith<'buf>: Sized {
+    type State;
+
+    fn decode_with(r: &mut Reader<'buf>, state: Self::State) -> Option<Self>;
+}
+
+impl<'buf, D> DecodeWith<'buf> for D
+where
+    D: Decode<'buf>,
+{
+    type State = ();
+
+    fn decode_with(r: &mut Reader<'buf>, _: Self::State) -> Option<Self> {
+        Self::decode(r)
+    }
+}
+
+impl<'buf> DecodeWith<'buf> for &'buf [u8] {
+    type State = usize;
+
+    #[inline]
+    fn decode_with(r: &mut Reader<'buf>, len: Self::State) -> Option<Self> {
+        r.read_slice(len)
     }
 }
 
@@ -53,20 +72,20 @@ impl<'buf> Decoder<'buf> {
     where
         D: Decode<'buf>,
     {
-        self.decode_with(())
+        D::decode(&mut self.0)
     }
 
     #[inline]
-    pub fn decode_with<D, S>(&mut self, state: S) -> Option<D>
+    pub fn decode_with<D>(&mut self, state: D::State) -> Option<D>
     where
-        D: Decode<'buf, S>,
+        D: DecodeWith<'buf>,
     {
-        D::decode(&mut self.0, state)
+        D::decode_with(&mut self.0, state)
     }
 
     #[inline]
     pub fn u8(&mut self) -> Option<u8> {
-        self.decode_with(())
+        self.decode()
     }
 
     #[inline]
