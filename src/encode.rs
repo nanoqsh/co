@@ -43,7 +43,7 @@ pub unsafe trait Encode {
     unsafe fn encode_unchecked(&self, w: &mut Writer);
 }
 
-/// A wrapper around `usize` representing a size value.
+/// A wrapper around `usize` representing the size of an encodable sequence.
 ///
 /// This type works closely with the [`Encode`] trait, as the [`size`](Encode::size)
 /// method returns a value representing the byte size required for encoding.
