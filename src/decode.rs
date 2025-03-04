@@ -70,7 +70,7 @@ impl<'buf> DecodeWith<'buf> for &'buf [u8] {
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```
 /// # fn d() -> Option<()> {
 /// use co::AsDecoder;
 ///
@@ -115,7 +115,7 @@ impl<'buf> Decoder<'buf> {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// # fn d() -> Option<()> {
     /// use co::AsDecoder;
     ///
@@ -138,7 +138,7 @@ impl<'buf> Decoder<'buf> {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// # fn d() -> Option<()> {
     /// use co::AsDecoder;
     ///
@@ -161,7 +161,7 @@ impl<'buf> Decoder<'buf> {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// # fn d() -> Option<()> {
     /// use co::AsDecoder;
     ///
@@ -184,7 +184,7 @@ impl<'buf> Decoder<'buf> {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// # fn d() -> Option<()> {
     /// use co::AsDecoder;
     ///
@@ -207,7 +207,7 @@ impl<'buf> Decoder<'buf> {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// # fn d() -> Option<()> {
     /// use co::AsDecoder;
     ///
@@ -233,7 +233,7 @@ impl<'buf> Decoder<'buf> {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// # fn d() -> Option<()> {
     /// use co::AsDecoder;
     ///
@@ -260,7 +260,7 @@ impl<'buf> Decoder<'buf> {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// # fn d() -> Option<()> {
     /// use co::AsDecoder;
     ///

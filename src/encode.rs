@@ -172,7 +172,7 @@ where
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```
 /// use co::EncodeExt;
 ///
 /// let mut code = [0; 5];
@@ -194,7 +194,7 @@ pub trait EncodeExt: Encode + Sized {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use co::EncodeExt;
     ///
     /// let mut code = [0; 3];
@@ -218,7 +218,7 @@ pub trait EncodeExt: Encode + Sized {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use co::EncodeExt;
     ///
     /// let mut code = [0];
@@ -236,7 +236,7 @@ pub trait EncodeExt: Encode + Sized {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use co::EncodeExt;
     ///
     /// let mut code = [0; 2];
@@ -254,7 +254,7 @@ pub trait EncodeExt: Encode + Sized {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use co::EncodeExt;
     ///
     /// let mut code = [0; 4];
@@ -272,7 +272,7 @@ pub trait EncodeExt: Encode + Sized {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use co::EncodeExt;
     ///
     /// let mut code = [0; 8];
@@ -290,7 +290,7 @@ pub trait EncodeExt: Encode + Sized {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use co::EncodeExt;
     ///
     /// let mut code = [0; 16];
@@ -311,7 +311,7 @@ pub trait EncodeExt: Encode + Sized {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use co::EncodeExt;
     ///
     /// let mut code = [0; size_of::<usize>()];
@@ -333,7 +333,7 @@ pub trait EncodeExt: Encode + Sized {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use {core::mem::MaybeUninit, co::EncodeExt};
     ///
     /// let mut buf = [MaybeUninit::uninit(); 3];
@@ -403,7 +403,7 @@ pub trait LittleEndianEncodeExt: Encode + Sized {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use co::{EncodeExt, LittleEndianEncodeExt};
     ///
     /// let mut code = [0; 2];
@@ -421,7 +421,7 @@ pub trait LittleEndianEncodeExt: Encode + Sized {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use co::{EncodeExt, LittleEndianEncodeExt};
     ///
     /// let mut code = [0; 4];
@@ -439,7 +439,7 @@ pub trait LittleEndianEncodeExt: Encode + Sized {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use co::{EncodeExt, LittleEndianEncodeExt};
     ///
     /// let mut code = [0; 8];
@@ -457,7 +457,7 @@ pub trait LittleEndianEncodeExt: Encode + Sized {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use co::{EncodeExt, LittleEndianEncodeExt};
     ///
     /// let mut code = [0; 16];
@@ -478,7 +478,7 @@ pub trait LittleEndianEncodeExt: Encode + Sized {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use co::{EncodeExt, LittleEndianEncodeExt};
     ///
     /// let mut code = [0; size_of::<usize>()];
